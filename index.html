@@ -2406,8 +2406,12 @@
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
-                    // Clone material so we can modify emissive per-instance
-                    child.material = child.material.clone();
+                    // Clone material(s) so we can modify emissive per-instance
+                    if (Array.isArray(child.material)) {
+                        child.material = child.material.map((mat) => mat.clone());
+                    } else if (child.material) {
+                        child.material = child.material.clone();
+                    }
                 }
             });
             return clone;
@@ -4540,13 +4544,28 @@
             }
         }
 
+        function setMaterialEmissive(material, intensity) {
+            if (!material) return;
+            // Only touch materials that actually support emissive uniforms.
+            if (
+                material.isMeshStandardMaterial ||
+                material.isMeshPhysicalMaterial ||
+                material.isMeshPhongMaterial ||
+                material.isMeshLambertMaterial ||
+                material.isMeshToonMaterial
+            ) {
+                if (!material.emissive) material.emissive = new THREE.Color(0xffffff);
+                material.emissiveIntensity = intensity;
+            }
+        }
+
         function setMeshEmissive(mesh, intensity) {
             mesh.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    child.material.emissiveIntensity = intensity;
-                    if (intensity > 0.1) {
-                        child.material.emissive = child.material.emissive || new THREE.Color(0xffffff);
-                    }
+                if (!child.isMesh || !child.material) return;
+                if (Array.isArray(child.material)) {
+                    child.material.forEach((mat) => setMaterialEmissive(mat, intensity));
+                } else {
+                    setMaterialEmissive(child.material, intensity);
                 }
             });
         }
