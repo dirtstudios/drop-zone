@@ -722,8 +722,8 @@
         const MAX_OBJECTS = 40;
         const YEET_FORCE = 80;
         const GRAB_DISTANCE = 15;
-        const MOVE_SPEED = 3;
-        const SPRINT_SPEED = 8;
+        const MOVE_SPEED = 6;
+        const SPRINT_SPEED = 11;
         const JUMP_FORCE = 10;
         const COMBO_WINDOW = 3000;
 
@@ -2519,6 +2519,12 @@
             // Materials
             groundMat = new CANNON.Material('ground');
             playerMat = new CANNON.Material('player');
+
+            // Keep player movement responsive on the floor (avoid sticky ground friction).
+            world.addContactMaterial(new CANNON.ContactMaterial(groundMat, playerMat, {
+                friction: 0.0,
+                restitution: 0.0
+            }));
             
             // Create tier-specific materials with custom bounce
             tierMaterials = [];
@@ -2877,6 +2883,8 @@
 
         // Chromatic aberration flash for dramatic high-tier merges
         function triggerChromaticAberration(intensity = 0.008, duration = 400) {
+            // Disabled: this effect caused distracting full-screen flashing.
+            return;
             if (!chromaticAberrationPass) return;
             
             const maxIntensity = intensity;
