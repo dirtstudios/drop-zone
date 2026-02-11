@@ -537,7 +537,7 @@
         <div id="achievements-box">
             <h1>🏆 Achievements</h1>
             <div id="achievements-list"></div>
-            <div class="ach-progress" id="ach-progress">0 / 15 Unlocked</div>
+            <div class="ach-progress" id="ach-progress">0 / 20 Unlocked</div>
             <button class="pause-btn secondary" id="ach-back" style="margin-top:15px;">← Back</button>
         </div>
     </div>
@@ -588,7 +588,7 @@
             <div style="margin: 10px 0; font-size: 0.95em;">
                 <div style="display: flex; justify-content: space-between; margin: 5px 0;">
                     <span>Unlocked:</span>
-                    <span id="stats-ach-unlocked" style="color: #ffcc00; font-weight: bold;">0 / 15</span>
+                    <span id="stats-ach-unlocked" style="color: #ffcc00; font-weight: bold;">0 / 20</span>
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 10px; height: 20px; overflow: hidden;">
                     <div id="stats-ach-progress" style="background: linear-gradient(90deg, #ffcc00, #ff6600); height: 100%; width: 0%; transition: width 0.3s;"></div>
@@ -982,6 +982,13 @@
             totalGoldenTouchesUsed: 0,
             totalMagnetsUsed: 0,
             totalCoins: 0,  // Currency for upgrades
+            
+            // New Enhanced Achievement Tracking (v1.1)
+            fastestMergeStreak: 0,        // Speed Demon: 5 merges in 10 seconds
+            totalCakesCreated: 0,         // Cake Baker: 10 birthday cakes
+            longestZenSession: 0,         // Zen Master: 10 minutes in zen mode
+            noYeetLevel5: 0,              // Perfectionist: reach level 5 without yeeting
+            maxSimultaneousAirborne: 0    // Airborne: 20 objects in air at once
             upgrades: {     // Purchased upgrades
                 scoreMultiplier: 0,      // +20% score per level (max 5)
                 mergeRadius: 0,          // +10% merge distance per level (max 3) 
@@ -1017,7 +1024,14 @@
             { id: 'score_5000', icon: '💎', name: 'Diamond Chef', desc: 'Score 5,000 points in a game', check: () => highScore >= 5000 },
             { id: 'score_10000', icon: '👑', name: 'Kitchen Royalty', desc: 'Score 10,000 points in a game', check: () => highScore >= 10000 },
             { id: 'time_30min', icon: '⏰', name: 'Dedicated Chef', desc: 'Play for 30 minutes total', check: () => (stats.totalTimePlayed + getSessionTimePlayed()) >= 1800 },
-            { id: 'powerup_all', icon: '✨', name: 'Collector', desc: 'Use every type of power-up', check: () => stats.totalBombsUsed > 0 && stats.totalFreezesUsed > 0 && stats.totalGoldenTouchesUsed > 0 && stats.totalMagnetsUsed > 0 }
+            { id: 'powerup_all', icon: '✨', name: 'Collector', desc: 'Use every type of power-up', check: () => stats.totalBombsUsed > 0 && stats.totalFreezesUsed > 0 && stats.totalGoldenTouchesUsed > 0 && stats.totalMagnetsUsed > 0 },
+            
+            // New Enhanced Achievements (v1.1)
+            { id: 'speed_demon', icon: '⚡', name: 'Speed Demon', desc: 'Complete 5 merges in under 10 seconds', check: () => (stats.fastestMergeStreak || 0) >= 5 },
+            { id: 'cake_baker', icon: '🎂', name: 'Cake Baker', desc: 'Create 10 birthday cakes total', check: () => (stats.totalCakesCreated || 0) >= 10 },
+            { id: 'zen_master', icon: '🧘', name: 'Zen Master', desc: 'Play Zen mode for 10 minutes straight', check: () => (stats.longestZenSession || 0) >= 600 },
+            { id: 'perfectionist', icon: '💯', name: 'Perfectionist', desc: 'Reach level 5 without yeeting any objects', check: () => (stats.noYeetLevel5 || 0) >= 1 },
+            { id: 'airborne', icon: '🚁', name: 'Airborne', desc: 'Have 20 objects in the air simultaneously', check: () => (stats.maxSimultaneousAirborne || 0) >= 20 }
         ];
 
         // === UPGRADE SYSTEM ===
@@ -1104,6 +1118,31 @@
             stats.totalCoins += amount;
             if (reason && amount > 0) {
                 showMessage(`+${amount} 🪙 ${reason}`, '#ffcc00');
+            }
+        }
+
+        // Track achievements that require real-time monitoring
+        function updateAchievementTracking() {
+            if (gameOver || isPaused) return;
+
+            // Track airborne objects (Airborne achievement: 20 objects in air simultaneously)
+            let airborneCount = 0;
+            objects.forEach(obj => {
+                if (obj.body.position.y > 1.0 && Math.abs(obj.body.velocity.y) > 0.1) {
+                    airborneCount++;
+                }
+            });
+            
+            if (airborneCount > (stats.maxSimultaneousAirborne || 0)) {
+                stats.maxSimultaneousAirborne = airborneCount;
+            }
+
+            // Track zen mode session length (Zen Master: 10 minutes straight in zen mode)
+            if (gameMode === 'zen' && window._sessionStartTime && !gameOver) {
+                const sessionDuration = Math.floor((Date.now() - window._sessionStartTime) / 1000);
+                if (sessionDuration > (stats.longestZenSession || 0)) {
+                    stats.longestZenSession = sessionDuration;
+                }
             }
         }
 
@@ -3563,6 +3602,11 @@
             gameOver = false; isFalling = false; floorBreakCooldown = false;
             goldenTouchActive = false; freezeActive = false; magnetActive = false;
             sessionYeets = 0; sessionBestCombo = 0;
+            
+            // Reset tracking for new achievements
+            window._yeetedThisSession = false;  // Track for perfectionist achievement
+            window._mergeTimestamps = [];       // Reset merge timing
+            window._sessionStartTime = Date.now(); // Track zen mode duration
             sessionStartTime = Date.now();
             stats.totalGamesPlayed++;
             slowMoActive = false; slowMoTimeScale = 1.0;
@@ -4137,6 +4181,22 @@
                 updatePuzzleProgress('merge');
                 updatePuzzleProgress('create_tier', { tier: newTier });
 
+                // Track Speed Demon achievement (5 merges in 10 seconds)
+                if (!window._mergeTimestamps) window._mergeTimestamps = [];
+                window._mergeTimestamps.push(Date.now());
+                // Keep only last 10 seconds of merges
+                const tenSecondsAgo = Date.now() - 10000;
+                window._mergeTimestamps = window._mergeTimestamps.filter(timestamp => timestamp > tenSecondsAgo);
+                if (window._mergeTimestamps.length >= 5) {
+                    const streak = Math.max(stats.fastestMergeStreak || 0, window._mergeTimestamps.length);
+                    stats.fastestMergeStreak = streak;
+                }
+
+                // Track Cake Baker achievement (birthday cakes created)
+                if (newTier === 5) { // Birthday cake is tier 5
+                    stats.totalCakesCreated = (stats.totalCakesCreated || 0) + 1;
+                }
+
                 // Combo system
                 comboCount++;
                 if (comboTimer) clearTimeout(comboTimer);
@@ -4434,6 +4494,12 @@
             stats.totalLevelsReached++;
             if (level > stats.highestLevel) stats.highestLevel = level;
             updateLevelMultiplier();
+            
+            // Check for perfectionist achievement - reached level 5 without yeeting
+            if (level === 5 && !window._yeetedThisSession) {
+                stats.noYeetLevel5 = (stats.noYeetLevel5 || 0) + 1;
+            }
+            
             checkAchievements();
             isFalling = false;
             floorBreakCooldown = true;
@@ -4608,6 +4674,10 @@
                 playSound('yeet');
                 sessionYeets++;
                 stats.totalYeetsAllTime++;
+                
+                // Track perfectionist achievement - mark if player yeeted in this session
+                if (!window._yeetedThisSession) window._yeetedThisSession = true;
+                
                 checkAchievements();
             }
         }
@@ -4800,6 +4870,9 @@
 
             // Update music intensity based on game state
             if (musicPlaying && !isPaused) updateMusicIntensity();
+
+            // Track achievements every frame
+            updateAchievementTracking();
 
             // Periodic stats save (every ~10 seconds via frame counting)
             if (!window._statsSaveCounter) window._statsSaveCounter = 0;
