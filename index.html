@@ -2506,10 +2506,10 @@
             vignettePass.uniforms.radius.value = 0.8;
             composer.addPass(vignettePass);
 
-            // Chromatic aberration for dramatic high-tier merges
-            chromaticAberrationPass = new ShaderPass(ChromaticAberrationShader);
-            chromaticAberrationPass.uniforms.intensity.value = 0.0; // Start disabled
-            composer.addPass(chromaticAberrationPass);
+            // Chromatic aberration disabled — was causing yellow flash artifacts
+            // chromaticAberrationPass = new ShaderPass(ChromaticAberrationShader);
+            // chromaticAberrationPass.uniforms.intensity.value = 0.0;
+            // composer.addPass(chromaticAberrationPass);
 
             // Kitchen Lighting — warm ambient + overhead spotlight
             const ambient = new THREE.AmbientLight(0xffe8c8, 0.8);
@@ -4890,13 +4890,8 @@
                 if (screenShake < 0.01) screenShake = 0;
             }
 
-            // Render with post-processing
-            try {
-                composer.render();
-            } catch(e) {
-                // Fallback to basic render if post-processing fails
-                renderer.render(scene, camera);
-            }
+            // Render directly (post-processing disabled — caused yellow flash on some browsers)
+            renderer.render(scene, camera);
         }
 
         // Setup mobile controls after all functions are defined
