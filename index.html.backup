@@ -537,7 +537,7 @@
         <div id="achievements-box">
             <h1>🏆 Achievements</h1>
             <div id="achievements-list"></div>
-            <div class="ach-progress" id="ach-progress">0 / 21 Unlocked</div>
+            <div class="ach-progress" id="ach-progress">0 / 20 Unlocked</div>
             <button class="pause-btn secondary" id="ach-back" style="margin-top:15px;">← Back</button>
         </div>
     </div>
@@ -863,8 +863,7 @@
             { name: 'MAGNET', emoji: '🧲', glowColor: 0xffff00, message: 'MAGNET!', msgColor: '#ffff00' },
             { name: 'BOMB', emoji: '💣', glowColor: 0xff2200, message: 'BOOM!', msgColor: '#ff4400' },
             { name: 'FREEZE', emoji: '❄️', glowColor: 0x44aaff, message: 'FREEZE!', msgColor: '#44aaff' },
-            { name: 'GOLDEN_TOUCH', emoji: '👑', glowColor: 0xffcc00, message: 'GOLDEN TOUCH!', msgColor: '#ffcc00' },
-            { name: 'TELEPORT', emoji: '🌪️', glowColor: 0xcc44ff, message: 'TELEPORT!', msgColor: '#cc44ff' }
+            { name: 'GOLDEN_TOUCH', emoji: '👑', glowColor: 0xffcc00, message: 'GOLDEN TOUCH!', msgColor: '#ffcc00' }
         ];
 
         // === MODEL CACHE ===
@@ -1025,15 +1024,14 @@
             { id: 'score_5000', icon: '💎', name: 'Diamond Chef', desc: 'Score 5,000 points in a game', check: () => highScore >= 5000 },
             { id: 'score_10000', icon: '👑', name: 'Kitchen Royalty', desc: 'Score 10,000 points in a game', check: () => highScore >= 10000 },
             { id: 'time_30min', icon: '⏰', name: 'Dedicated Chef', desc: 'Play for 30 minutes total', check: () => (stats.totalTimePlayed + getSessionTimePlayed()) >= 1800 },
-            { id: 'powerup_all', icon: '✨', name: 'Collector', desc: 'Use every type of power-up', check: () => stats.totalBombsUsed > 0 && stats.totalFreezesUsed > 0 && stats.totalGoldenTouchesUsed > 0 && stats.totalMagnetsUsed > 0 && (stats.totalTeleportsUsed || 0) > 0 },
+            { id: 'powerup_all', icon: '✨', name: 'Collector', desc: 'Use every type of power-up', check: () => stats.totalBombsUsed > 0 && stats.totalFreezesUsed > 0 && stats.totalGoldenTouchesUsed > 0 && stats.totalMagnetsUsed > 0 },
             
             // New Enhanced Achievements (v1.1)
             { id: 'speed_demon', icon: '⚡', name: 'Speed Demon', desc: 'Complete 5 merges in under 10 seconds', check: () => (stats.fastestMergeStreak || 0) >= 5 },
             { id: 'cake_baker', icon: '🎂', name: 'Cake Baker', desc: 'Create 10 birthday cakes total', check: () => (stats.totalCakesCreated || 0) >= 10 },
             { id: 'zen_master', icon: '🧘', name: 'Zen Master', desc: 'Play Zen mode for 10 minutes straight', check: () => (stats.longestZenSession || 0) >= 600 },
             { id: 'perfectionist', icon: '💯', name: 'Perfectionist', desc: 'Reach level 5 without yeeting any objects', check: () => (stats.noYeetLevel5 || 0) >= 1 },
-            { id: 'airborne', icon: '🚁', name: 'Airborne', desc: 'Have 20 objects in the air simultaneously', check: () => (stats.maxSimultaneousAirborne || 0) >= 20 },
-            { id: 'teleporter', icon: '🌪️', name: 'Portal Master', desc: 'Use the teleport powerup 10 times', check: () => (stats.totalTeleportsUsed || 0) >= 10 }
+            { id: 'airborne', icon: '🚁', name: 'Airborne', desc: 'Have 20 objects in the air simultaneously', check: () => (stats.maxSimultaneousAirborne || 0) >= 20 }
         ];
 
         // === UPGRADE SYSTEM ===
@@ -2790,7 +2788,6 @@
                 case 'BOMB': activateBomb(); stats.totalBombsUsed++; break;
                 case 'FREEZE': activateFreeze(); stats.totalFreezesUsed++; break;
                 case 'GOLDEN_TOUCH': activateGoldenTouch(); stats.totalGoldenTouchesUsed++; break;
-                case 'TELEPORT': activateTeleport(); stats.totalTeleportsUsed = (stats.totalTeleportsUsed || 0) + 1; break;
             }
             checkAchievements();
             showMessage(pType.message, pType.msgColor);
@@ -2868,64 +2865,6 @@
         function activateGoldenTouch() {
             goldenTouchActive = true;
             showPowerupIndicator('👑 GOLDEN TOUCH', '#ffcc00');
-        }
-
-        function activateTeleport() {
-            // Find a safe teleport location (avoid objects and walls)
-            let attempts = 0;
-            let newX, newZ;
-            let safeLocation = false;
-            
-            while (!safeLocation && attempts < 20) {
-                newX = (Math.random() - 0.5) * (ROOM_SIZE - 4); // Stay away from walls
-                newZ = (Math.random() - 0.5) * (ROOM_SIZE - 4);
-                
-                // Check if location is clear of objects (within 3 unit radius)
-                safeLocation = true;
-                for (const obj of objects) {
-                    const dx = obj.body.position.x - newX;
-                    const dz = obj.body.position.z - newZ;
-                    const distance = Math.sqrt(dx * dx + dz * dz);
-                    if (distance < 3) {
-                        safeLocation = false;
-                        break;
-                    }
-                }
-                attempts++;
-            }
-            
-            // Teleport player
-            const teleportY = Math.max(1, level * 1.2); // Stand on current floor
-            playerBody.position.set(newX, teleportY, newZ);
-            playerBody.velocity.set(0, 0, 0); // Stop any momentum
-            
-            // Visual effect - brief purple flash
-            const flashElement = document.createElement('div');
-            flashElement.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: radial-gradient(circle, rgba(204,68,255,0.6) 0%, transparent 70%);
-                z-index: 200; pointer-events: none;
-                animation: teleportFlash 0.5s ease-out;
-            `;
-            document.body.appendChild(flashElement);
-            setTimeout(() => flashElement.remove(), 500);
-            
-            // Add teleport flash animation if it doesn't exist
-            if (!document.querySelector('style[data-teleport-animation]')) {
-                const style = document.createElement('style');
-                style.setAttribute('data-teleport-animation', 'true');
-                style.textContent = `
-                    @keyframes teleportFlash {
-                        0% { opacity: 1; transform: scale(0.8); }
-                        50% { opacity: 0.8; transform: scale(1.2); }
-                        100% { opacity: 0; transform: scale(1); }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            showPowerupIndicator('🌪️ TELEPORTED!', '#cc44ff');
-            playSound('powerup');
         }
 
         function activateSlowMo() {
