@@ -2236,6 +2236,16 @@
             if (heldObject) releaseObject();
             if (spawnTimerId) clearInterval(spawnTimerId);
             if (powerupSpawnTimer) clearTimeout(powerupSpawnTimer);
+            if (timeAttackTimerId) {
+                clearInterval(timeAttackTimerId);
+                timeAttackTimerId = null;
+            }
+            
+            // Hide timer display
+            const timerDisplay = document.getElementById('timer-display');
+            if (timerDisplay) {
+                timerDisplay.style.display = 'none';
+            }
 
             if (activePowerupOnField) {
                 scene.remove(activePowerupOnField.mesh);
@@ -2438,6 +2448,16 @@
         function selectGameMode(mode) {
             gameMode = mode;
             
+            // Clean up timer from previous game mode
+            if (timeAttackTimerId) {
+                clearInterval(timeAttackTimerId);
+                timeAttackTimerId = null;
+            }
+            const timerDisplay = document.getElementById('timer-display');
+            if (timerDisplay) {
+                timerDisplay.style.display = 'none';
+            }
+            
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.style.background = '#5a4a3a';
                 btn.style.color = '#f5e6c8';
@@ -2469,7 +2489,81 @@
         }
 
         function startTimeAttackTimer() {
-            // Placeholder - simplified for this demo
+            timeAttackStartTime = Date.now();
+            timeAttackTimeLeft = timeAttackDuration;
+            
+            // Create timer display if it doesn't exist
+            let timerDisplay = document.getElementById('timer-display');
+            if (!timerDisplay) {
+                timerDisplay = document.createElement('div');
+                timerDisplay.id = 'timer-display';
+                timerDisplay.style.cssText = `
+                    position: absolute; 
+                    top: 50px; 
+                    left: 50%; 
+                    transform: translateX(-50%);
+                    color: #ffcc00; 
+                    font-size: 2.5em; 
+                    font-weight: bold;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                    background: rgba(20,15,10,0.8);
+                    padding: 10px 20px;
+                    border-radius: 10px;
+                    border: 2px solid #ffcc00;
+                    pointer-events: none;
+                    z-index: 10;
+                `;
+                document.body.appendChild(timerDisplay);
+            }
+            
+            // Show timer display
+            timerDisplay.style.display = 'block';
+            
+            // Update timer every 100ms for smooth countdown
+            timeAttackTimerId = setInterval(() => {
+                if (gameOver || isPaused) return;
+                
+                const elapsed = Date.now() - timeAttackStartTime;
+                timeAttackTimeLeft = Math.max(0, timeAttackDuration - elapsed);
+                
+                const seconds = Math.ceil(timeAttackTimeLeft / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (timerDisplay) {
+                    if (seconds <= 10) {
+                        // Pulse effect for final 10 seconds
+                        timerDisplay.style.color = seconds % 2 === 0 ? '#ff3333' : '#ffcc00';
+                        timerDisplay.style.transform = `translateX(-50%) scale(${1 + (10 - seconds) * 0.1})`;
+                    } else {
+                        timerDisplay.style.color = '#ffcc00';
+                        timerDisplay.style.transform = 'translateX(-50%) scale(1)';
+                    }
+                    
+                    timerDisplay.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }
+                
+                // Time's up!
+                if (timeAttackTimeLeft <= 0) {
+                    clearInterval(timeAttackTimerId);
+                    timeAttackTimerId = null;
+                    
+                    // Show final time up message
+                    if (timerDisplay) {
+                        timerDisplay.textContent = "TIME'S UP!";
+                        timerDisplay.style.color = '#ff3333';
+                        timerDisplay.style.transform = 'translateX(-50%) scale(1.2)';
+                    }
+                    
+                    // Trigger game over after a brief delay
+                    setTimeout(() => {
+                        triggerGameOver();
+                    }, 1500);
+                    
+                    // Play time's up sound
+                    playSound('danger', 3);
+                }
+            }, 100);
         }
 
         function initializePuzzleMode() {
