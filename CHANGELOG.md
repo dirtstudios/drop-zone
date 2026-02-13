@@ -1,6 +1,34 @@
-# Drop Zone Game - Major Overhaul
+# Drop Zone Game - Changelog
 
-## Summary of Changes (January 31, 2025)
+## 🎮 Time Attack Mode Implementation (February 13, 2026)
+
+### New Feature: Fully Functional Time Attack Mode ✅
+- **Problem**: Time Attack mode was available in menu but non-functional (placeholder implementation)
+- **Solution**: Implemented complete 60-second countdown timer system with visual feedback
+- **Features Added**:
+  - Real-time countdown display in MM:SS format at top center of screen
+  - Dynamic visual effects: final 10 seconds pulse red and scale up for urgency
+  - Automatic game over trigger when timer reaches zero
+  - Integrated "TIME'S UP!" message with scale animation
+  - Proper cleanup when switching game modes or ending game
+  - Uses existing game over system and danger sound effects
+
+### Technical Implementation:
+- Replaced placeholder `startTimeAttackTimer()` function with full timer logic
+- Added timer display element with styled positioning and effects
+- Integrated with existing game state management (pause, game over, mode switching)
+- Timer updates every 100ms for smooth countdown experience
+- Proper memory cleanup prevents timer conflicts between modes
+
+### Player Experience Impact:
+- Time Attack mode now provides intense, focused 60-second gameplay sessions
+- Clear visual countdown creates urgency and engagement
+- Mode switching works seamlessly without timer artifacts
+- Completes the game mode selection that was previously incomplete
+
+---
+
+## Major Overhaul (January 31, 2025)
 
 This represents a complete overhaul of the Drop Zone game based on Chris's feedback to fix critical issues with visual artifacts, physics responsiveness, performance, and player engagement.
 
