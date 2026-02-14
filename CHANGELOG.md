@@ -1,5 +1,31 @@
 # Drop Zone Game - Changelog
 
+## 🔧 Game Startup Flow Fix (February 14, 2026)
+
+### Fixed: Pointer Lock API Browser Compatibility Issues ✅
+- **Problem**: Game was trying to auto-start and request pointer lock without user interaction, causing "THREE.PointerLockControls: Unable to use Pointer Lock API" errors in browser console
+- **Solution**: Implemented proper user interaction flow for game startup
+- **Changes Made**:
+  - Made instruction screen visible by default (blocker display: flex instead of display: none)
+  - Modified `startGame()` function to prevent multiple executions and properly manage game state
+  - Updated click handler to call `startGame()` instead of directly requesting pointer lock
+  - Added timeout before pointer lock request to ensure proper initialization sequence
+  - Game now waits for user to click "CLICK TO START" before attempting any pointer lock operations
+
+### Technical Implementation:
+- Added `gameStarted` flag to prevent multiple initialization
+- Restructured startup sequence: user click → hide blocker → initialize game → request pointer lock
+- Improved browser compatibility by respecting user gesture requirements
+- Maintains all existing game functionality while fixing startup issues
+
+### Player Experience Impact:
+- No more console errors when loading the game
+- Clear visual feedback with instruction screen displayed until user is ready to play
+- Smoother transition from instructions to gameplay
+- Better browser compatibility across different environments
+
+---
+
 ## 🎮 Time Attack Mode Implementation (February 13, 2026)
 
 ### New Feature: Fully Functional Time Attack Mode ✅
