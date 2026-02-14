@@ -31,7 +31,7 @@
 
         #blocker {
             position: absolute; width: 100%; height: 100%;
-            background: rgba(20,10,5,0.95); display: none;
+            background: rgba(20,10,5,0.95); display: flex;
             justify-content: center; align-items: center;
             z-index: 100;
         }
@@ -1039,13 +1039,27 @@
         }
 
         // === ENHANCED INITIALIZATION ===
+        let gameStarted = false;
+        
         async function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+            
+            document.getElementById('blocker').style.display = 'none';
+            
             await preloadModels();
             init();
             animate();
+            
+            // Request pointer lock after user interaction
+            setTimeout(() => {
+                if (controls && controls.lock) {
+                    controls.lock();
+                }
+            }, 100);
         }
 
-        startGame();
+        // Don't auto-start - wait for user interaction
 
         function init() {
             updateLevelMultiplier();
@@ -2335,7 +2349,7 @@
             const instructions = document.getElementById('instructions');
 
             instructions.addEventListener('click', () => {
-                controls.lock();
+                startGame();
                 initAudio();
             });
 
